@@ -1,13 +1,10 @@
 `timescale 1ps/1ps
 
 module king_move_generator (
-    input  wire [24:0] sel_piece_board,
-    input wire [24:0] king_board;
+    input  wire [24:0] dep_pos_board,
     input wire [24:0] team_board, // 같은 팀 비트보드들 or연산으로 합치면 만들 수 있음
     output wire [24:0] king_move_board;
 );
-
-    wire [24:0] sel_king_piece_board = sel_piece_board & king_board & team_board;
 
     // 가장자리 랩어라운드 방지용 마스크
     localparam [24:0] MASK_NOT_LEFT  = 64'hFEFE_FEFE_FEFE_FEFE;
@@ -18,16 +15,16 @@ module king_move_generator (
     wire [24:0] neighbors;
 
     // 1. 십자 방향 (상, 하, 좌, 우)
-    assign shift_l = (sel_king_piece_board & MASK_NOT_LEFT)  >> 1;
-    assign shift_r = (sel_king_piece_board & MASK_NOT_RIGHT) << 1;
-    assign shift_u = sel_king_piece_board >> 8;
-    assign shift_d = sel_king_piece_board << 8;
+    assign shift_l = (dep_pos_board & MASK_NOT_LEFT)  >> 1;
+    assign shift_r = (dep_pos_board & MASK_NOT_RIGHT) << 1;
+    assign shift_u = dep_pos_board >> 8;
+    assign shift_d = dep_pos_board << 8;
 
     // 2. 대각선 방향 (상좌, 상우, 하좌, 하우)
-    assign shift_ul = (sel_king_piece_board & MASK_NOT_LEFT)  >> 9;
-    assign shift_ur = (sel_king_piece_board & MASK_NOT_RIGHT) >> 7;
-    assign shift_dl = (sel_king_piece_board & MASK_NOT_LEFT)  << 7;
-    assign shift_dr = (sel_king_piece_board & MASK_NOT_RIGHT) << 9;
+    assign shift_ul = (dep_pos_board & MASK_NOT_LEFT)  >> 9;
+    assign shift_ur = (dep_pos_board & MASK_NOT_RIGHT) >> 7;
+    assign shift_dl = (dep_pos_board & MASK_NOT_LEFT)  << 7;
+    assign shift_dr = (dep_pos_board & MASK_NOT_RIGHT) << 9;
 
     // 3. 8방향 결과를 모두 합침
     assign neighbors = shift_l | shift_r | shift_u | shift_d |
