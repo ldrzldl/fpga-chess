@@ -7,10 +7,10 @@ module top (
 );
 
     // 상태 정의
-    localparam S_IDLE      = 2'b00;
-    localparam S_START_SEL = 2'b01;
-    localparam S_UPDATE    = 2'b10;
-    localparam S_SWAP_TURN = 2'b11;
+    localparam S_IDLE      = 2'b00; // 시작 위치 선택 전
+    localparam S_START_SEL = 2'b01; // 시작 위치 선택 후
+    localparam S_UPDATE    = 2'b10; // 도착 위치 선택 후
+    localparam S_SWAP_TURN = 2'b11; // 업데이트 후
 
     reg [1:0] state;
 
@@ -21,9 +21,9 @@ module top (
     reg [24:0] pawn_board;
     
     // 배열 인덱스용이므로 5비트로 선언 (0~24 표현)
-    reg [4:0] dep_pos; 
-    reg [4:0] des_pos; 
-    reg [24:0] dep_pos_board;
+    reg [4:0] start_pos; 
+    reg [4:0] end_pos; 
+    reg [24:0] start_pos_board;
     
     wire [24:0] move_board;
 
@@ -34,7 +34,7 @@ module top (
         .king_board(king_board),
         .rook_board(rook_board),
         .pawn_board(pawn_board),
-        .start_pos_board(dep_pos_board & team_board), // team_board로 수정
+        .start_pos_board(start_pos_board & team_board), // team_board로 수정
         .move_board(move_board)
     );
 
@@ -47,9 +47,9 @@ module top (
             // 여기에 보드 초기화 로직 추가 필요
         end else begin
             case (state)
-                S_START_SEL: begin
+                S_START_SEL: begin // 유효한 도착위치라면 업데이트 상태로 변경
                     if (sel == 1'b1) begin 
-                        if (move_board[des_pos] == 1'b1) begin 
+                        if (move_board[end_pos] == 1'b1) begin 
                             state <= S_UPDATE;
                         end else begin 
                             state <= S_START_SEL;
@@ -57,30 +57,30 @@ module top (
                     end
                 end
 
-                S_UPDATE: begin
+                S_UPDATE: begin // 보드 업데이트
                     // 1. 출발지 비우기
-                    team_board[dep_pos] <= 1'b0;
-                    king_board[dep_pos] <= 1'b0;
-                    rook_board[dep_pos] <= 1'b0;
-                    pawn_board[dep_pos] <= 1'b0;
+                    team_board[start_pos] <= 1'b0;
+                    king_board[start_pos] <= 1'b0;
+                    rook_board[start_pos] <= 1'b0;
+                    pawn_board[start_pos] <= 1'b0;
 
                     // 2. 도착지 채우기
-                    team_board[des_pos] <= 1'b1;
-                    opponent_board[des_pos] <= 1'b0; 
+                    team_board[end_pos] <= 1'b1;
+                    opponent_board[end_pos] <= 1'b0; 
                     
-                    if (king_board[dep_pos] == 1'b1) begin 
-                        king_board[des_pos] <= 1'b1;
-                    end else if (rook_board[dep_pos] == 1'b1) begin 
-                        rook_board[des_pos] <= 1'b1;
+                    if (king_board[start_pos] == 1'b1) begin 
+                        king_board[end_pos] <= 1'b1;
+                    end else if (rook_board[start_pos] == 1'b1) begin 
+                        rook_board[end_pos] <= 1'b1;
                     end else begin 
-                        pawn_board[des_pos] <= 1'b1;
+                        pawn_board[end_pos] <= 1'b1;
                     end
                     
                     // 3. 업데이트 완료 후 턴 스위치 상태로 이동
                     state <= S_SWAP_TURN;
                 end 
 
-                S_SWAP_TURN: begin
+                S_SWAP_TURN: begin // 턴 교체
                     // 기물 이동이 완전히 끝난 다음 클럭에서 보드 시점 교환
                     for (i = 0; i < 25; i = i + 1) begin 
                         opponent_board[i] <= team_board[i];
