@@ -1,0 +1,96 @@
+`timescale 1ns / 1ps
+
+module rook_move_generator_blocked (
+    input  wire [2:0]  pos_x,           // 현재 X 좌표 (1 ~ 5)
+    input  wire [2:0]  pos_y,           // 현재 Y 좌표 (1 ~ 5)
+    input  wire        valid,           // 기물 존재 여0부
+    input  wire [24:0] occupied_board,  // 체스판 위 모든 기물(아군+적군)의 위치
+    input  wire [24:0] friendly_board,  // 아군 기물의 위치 (아군 칸으로 이동 방지)
+    output reg  [24:0] movable_board    // 최종 이동 가능한 위치 (25비트 비트보드)
+);
+
+    integer d;
+    integer nx, ny, idx;
+    reg blocked;
+
+    always @(*) begin
+        movable_board = 25'd0;
+
+        if (valid) begin
+            // ---------------------------------------------------------
+            // 1. 오른쪽 탐색 (+X 방향)
+            // ---------------------------------------------------------
+            blocked = 1'b0;
+            for (d = 1; d <= 4; d = d + 1) begin
+                nx = pos_x + d;
+                ny = pos_y;
+                if (nx <= 5 && !blocked) begin
+                    idx = (5 - ny) * 5 + (nx - 1);
+                    movable_board[idx] = 1'b1;
+                    
+                    // 장애물을 만나면 이 방향의 추가 탐색 차단
+                    if (occupied_board[idx]) begin
+                        blocked = 1'b1;
+                    end
+                end
+            end
+
+            // ---------------------------------------------------------
+            // 2. 왼쪽 탐색 (-X 방향)
+            // ---------------------------------------------------------
+            blocked = 1'b0;
+            for (d = 1; d <= 4; d = d + 1) begin
+                nx = pos_x - d;
+                ny = pos_y;
+                if (nx >= 1 && !blocked) begin
+                    idx = (5 - ny) * 5 + (nx - 1);
+                    movable_board[idx] = 1'b1;
+                    
+                    if (occupied_board[idx]) begin
+                        blocked = 1'b1;
+                    end
+                end
+            end
+
+            // ---------------------------------------------------------
+            // 3. 위쪽 탐색 (+Y 방향)
+            // ---------------------------------------------------------
+            blocked = 1'b0;
+            for (d = 1; d <= 4; d = d + 1) begin
+                nx = pos_x;
+                ny = pos_y + d;
+                if (ny <= 5 && !blocked) begin
+                    idx = (5 - ny) * 5 + (nx - 1);
+                    movable_board[idx] = 1'b1;
+                    
+                    if (occupied_board[idx]) begin
+                        blocked = 1'b1;
+                    end
+                end
+            end
+
+            // ---------------------------------------------------------
+            // 4. 아래쪽 탐색 (-Y 방향)
+            // ---------------------------------------------------------
+            blocked = 1'b0;
+            for (d = 1; d <= 4; d = d + 1) begin
+                nx = pos_x;
+                ny = pos_y - d;
+                if (ny >= 1 && !blocked) begin
+                    idx = (5 - ny) * 5 + (nx - 1);
+                    movable_board[idx] = 1'b1;
+                    
+                    if (occupied_board[idx]) begin
+                        blocked = 1'b1;
+                    end
+                end
+            end
+
+            // ---------------------------------------------------------
+            // 5. 아군 기물이 위치한 칸은 이동 대상에서 제거
+            // ---------------------------------------------------------
+            movable_board = movable_board & ~friendly_board;
+        end
+    end
+
+endmodule

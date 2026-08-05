@@ -1,0 +1,31 @@
+`timescale 1ns / 1ps
+
+module rook_move_generator (
+    input  wire [2:0]  pos_x,         // 현재 X 좌표 (1 ~ 5)
+    input  wire [2:0]  pos_y,         // 현재 Y 좌표 (1 ~ 5)
+    input  wire        valid,         // 기물 존재 여부
+    output reg  [24:0] movable_board  // 이동 가능한 위치들 (25비트 비트보드)
+);
+
+    integer i;
+    integer cur_x, cur_y;
+
+    always @(*) begin
+        // 1. 기본값 초기화 (기물이 없거나 유효하지 않으면 0)
+        movable_board = 25'd0;
+
+        if (valid) begin
+            // 2. 5x5 보드의 모든 위치(0~24)를 순회하며 이동 가능 여부 판단
+            for (i = 0; i < 25; i = i + 1) begin
+                cur_x = (i % 5) + 1; // 해당 칸의 X 좌표
+                cur_y = 5 - (i / 5); // 해당 칸의 Y 좌표
+
+                // X 좌표가 같거나(가로) Y 좌표가 같고(세로), 자기 위치가 아닌 곳에 1 설정
+                if ((cur_x == pos_x || cur_y == pos_y) && !(cur_x == pos_x && cur_y == pos_y)) begin
+                    movable_board[i] = 1'b1;
+                end
+            end
+        end
+    end
+
+endmodule
