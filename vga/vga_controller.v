@@ -1,5 +1,5 @@
 module vga_controller (
-    input wire clk_25MHz,     // 25MHz 픽셀 클럭
+    input wire clk,     // 25MHz 픽셀 클럭
     input wire reset,
     output wire hsync,
     output wire vsync,
@@ -16,7 +16,7 @@ module vga_controller (
     reg [9:0] v_cnt;
 
     // 수평/수직 카운터
-    always @(posedge clk_25MHz or posedge reset) begin
+    always @(posedge clk or posedge reset) begin
         if (reset) begin
             h_cnt <= 0;
             v_cnt <= 0;

@@ -1,5 +1,5 @@
 module vga_top (
-    input wire clk_25MHz,
+    input wire clk,
     input wire reset,
     input wire is_turn_white,
     input wire [24:0] team_board,
@@ -27,7 +27,7 @@ module vga_top (
     
     // 모듈 인스턴스화
     vga_controller vc (
-        .clk_25MHz(clk_25MHz),
+        .clk(clk),
         .reset(reset),
         .hsync(hsync),
         .vsync(vsync),
