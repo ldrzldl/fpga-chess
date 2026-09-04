@@ -1,7 +1,7 @@
 `timescale 1ps/1ps
 
 module pawn_move_generator (
-    input  wire [24:0] dep_pos_board, // 현재 폰 위치 (25‑bit, 하나만 1)
+    input  wire [24:0] start_pos_board, // 현재 폰 위치 (25‑bit, 하나만 1)
     input  wire        is_white,      // 1 = 백(위쪽 이동), 0 = 흑(아래쪽 이동)
     input  wire [24:0] team_board,    // 우리 팀(아군) 기물들의 비트보드
     input  wire [24:0] enemy_board,   // 적 팀(상대) 기물들의 비트보드
@@ -15,14 +15,14 @@ module pawn_move_generator (
     wire [24:0] empty_squares = ~(team_board | enemy_board); // 빈 칸 계산
 
     // 백: 위로(<<) 전진
-    wire [24:0] w_forward = (dep_pos_board << 5) & empty_squares;
-    wire [24:0] w_atk_l   = ((dep_pos_board & MASK_NOT_LEFT) << 4) & enemy_board;
-    wire [24:0] w_atk_r   = ((dep_pos_board & MASK_NOT_RIGHT) << 6) & enemy_board;
+    wire [24:0] w_forward = (start_pos_board << 5) & empty_squares;
+    wire [24:0] w_atk_l   = ((start_pos_board & MASK_NOT_LEFT) << 4) & enemy_board;
+    wire [24:0] w_atk_r   = ((start_pos_board & MASK_NOT_RIGHT) << 6) & enemy_board;
 
     // 흑: 아래로(>>) 전진
-    wire [24:0] b_forward = (dep_pos_board >> 5) & empty_squares;
-    wire [24:0] b_atk_l   = ((dep_pos_board & MASK_NOT_LEFT) >> 6) & enemy_board;
-    wire [24:0] b_atk_r   = ((dep_pos_board & MASK_NOT_RIGHT) >> 4) & enemy_board;
+    wire [24:0] b_forward = (start_pos_board >> 5) & empty_squares;
+    wire [24:0] b_atk_l   = ((start_pos_board & MASK_NOT_LEFT) >> 6) & enemy_board;
+    wire [24:0] b_atk_r   = ((start_pos_board & MASK_NOT_RIGHT) >> 4) & enemy_board;
 
     assign pawn_move_board = is_white ? (w_forward | w_atk_l | w_atk_r)
                                       : (b_forward | b_atk_l | b_atk_r);
