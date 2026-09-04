@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module tb_vga_image_top;
+module tb_vga_top;
 
     // 입력 신호 (reg)
     reg clk_25MHz;
@@ -13,10 +13,32 @@ module tb_vga_image_top;
     wire [3:0] green;
     wire [3:0] blue;
 
+    // 백(하단) 선공 기준
+    reg is_turn_white  = 1'b1;
+
+    // 기물 종류별 보드 (가로·세로 대칭 구조)
+    // 각 5비트 묶음: [Row 4(하단) _ Row 3 _ Row 2(중앙 빈칸) _ Row 1 _ Row 0(상단)]
+    reg [24:0] king_board     = 25'b00100_00000_00000_00000_00100;
+    reg [24:0] rook_board     = 25'b10001_00000_00000_00000_10001;
+    reg [24:0] pawn_board     = 25'b00000_11111_00000_11111_00000;
+
+    // 백 기물 (하단 Row 3, Row 4) -> 턴 주체(team_board)
+    reg [24:0] team_board     = 25'b10101_11111_00000_00000_00000;
+
+    // 흑 기물 (상단 Row 0, Row 1) -> 상대방(opponent_board)
+    reg [24:0] opponent_board = 25'b00000_00000_00000_11111_10101;
+
+
     // UUT (Unit Under Test) 인스턴스화
-    vga_image_top uut (
+    vga_top uut (
         .clk_25MHz(clk_25MHz),
         .reset(reset),
+        .is_turn_white(is_turn_white),
+        .team_board(team_board),
+        .opponent_board(opponent_board),
+        .king_board(king_board),
+        .rook_board(rook_board),
+        .pawn_board(pawn_board),
         .hsync(hsync),
         .vsync(vsync),
         .red(red),
@@ -59,9 +81,6 @@ module tb_vga_image_top;
 
         // Active Video 영역 (480 라인) 캡처
         for (y = 0; y < 480; y = y + 1) begin
-            // HSYNC Back Porch (48 픽셀) 대기
-            repeat(48) @(posedge clk_25MHz);
-
             // Active 픽셀 영역 (640 픽셀) 파일에 기록
             for (x = 0; x < 640; x = x + 1) begin
                 // 4-bit RGB (0~15)를 8-bit RGB (0~255) 레벨로 확장하여 저장
@@ -69,8 +88,8 @@ module tb_vga_image_top;
                 @(posedge clk_25MHz);
             end
 
-            // HSYNC Front Porch (16) + HSYNC Sync Pulse (96) = 112 픽셀 대기
-            repeat(112) @(posedge clk_25MHz);
+            // HSYNC Back Porch (48) + HSYNC Front Porch (16) + HSYNC Sync Pulse (96) = 112 픽셀 대기
+            repeat(160) @(posedge clk_25MHz);
         end
 
         $fclose(file);
