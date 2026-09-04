@@ -41,7 +41,7 @@ module chess_core (
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             state <= S_IDLE;
-            cursor <= 22;
+            cursor <= 5'd22;
 
             is_turn_white <= 1'b1;
             king_board     <= 25'b00100_00000_00000_00000_00100;
