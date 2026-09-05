@@ -19,7 +19,7 @@ module move_generator (
     
     wire [24:0] pawn_move_board;
     // <-- 수정: pmg의 두 번째 인자로 is_white를 전달
-    pawn_move_generator pmg(start_pos_board & pawn_board, is_white, team_board, opponent_board, pawn_move_board);
+    pawn_move_generator pmg(start_pos_board & pawn_board, is_turn_white, team_board, opponent_board, pawn_move_board);
 
     assign move_board = king_move_board | rook_move_board | pawn_move_board;
 
